@@ -71,28 +71,28 @@ TitleLabel.Name = "Title"
 TitleLabel.Size = UDim2.new(1, -45, 1, 0)
 TitleLabel.Position = UDim2.new(0, 22, 0, 0)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "CYBER ITEM SPAWNER"
+TitleLabel.Text = "CYBER ITEM HUB"
 TitleLabel.TextColor3 = Color3.fromRGB(220, 255, 250)
 TitleLabel.TextSize = 11
 TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.Parent = TitleBar
 
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Name = "Close"
-CloseBtn.Size = UDim2.new(0, 20, 0, 20)
-CloseBtn.Position = UDim2.new(1, -26, 0.5, -10)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 45, 85)
-CloseBtn.BackgroundTransparency = 0.2
-CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.TextSize = 10
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.Parent = TitleBar
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Name = "Minimize"
+MinimizeBtn.Size = UDim2.new(0, 22, 0, 22)
+MinimizeBtn.Position = UDim2.new(1, -28, 0.5, -11)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
+MinimizeBtn.BackgroundTransparency = 0.2
+MinimizeBtn.Text = "─"
+MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeBtn.TextSize = 12
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.Parent = TitleBar
 
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 5)
-CloseCorner.Parent = CloseBtn
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 5)
+MinCorner.Parent = MinimizeBtn
 
 local ScrollFrame = Instance.new("ScrollingFrame")
 ScrollFrame.Name = "ScrollFrame"
@@ -172,51 +172,58 @@ local function CreateItemButton(itemName, displayName)
     end)
 end
 
--- รายการไอเทมทั้งหมดในเกม (สามารถเพิ่มบรรทัดใหม่ตรงนี้ได้ตลอด)
 CreateItemButton("BloxyCola", "⚡ Bloxy Cola")
-CreateItemButton("PiePan", "🥧 Pie Pan ($40)")
+CreateItemButton("Cure", "🧪 กระป๋องยา (Cure / Vaccine)")
+CreateItemButton("Medkit", "🩹 กล่องยา 1 (Medkit)")
+CreateItemButton("Bandage", "🩹 กล่องยา 2 (Bandage)")
 CreateItemButton("Apple", "🍎 Apple")
 CreateItemButton("Pizza", "🍕 Pizza")
 CreateItemButton("Cookie", "🍪 Cookie")
 CreateItemButton("Chips", "🍟 Chips")
-CreateItemButton("Medkit", "🩹 Medkit")
-CreateItemButton("Cure", "🧪 Vaccine / Cure")
 CreateItemButton("Bat", "🏏 Bat")
 CreateItemButton("Sword", "⚔️ Sword")
 CreateItemButton("Armor", "🛡️ Armor")
 
-local dragging, dragInput, dragStart, startPos
+local isMinimized = false
+MinimizeBtn.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    
+    if isMinimized then
+        MinimizeBtn.Text = "+"
+        TweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 220, 0, 32)
+        }):Play()
+    else
+        MinimizeBtn.Text = "─"
+        TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 220, 0, 260)
+        }):Play()
+    end
+end)
 
+local draggingMain, dragInputMain, dragStartMain, startPosMain
 TitleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = MainFrame.Position
+        draggingMain = true
+        dragStartMain = input.Position
+        startPosMain = MainFrame.Position
         input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
+            if input.UserInputState == Enum.UserInputState.End then draggingMain = false end
         end)
     end
 end)
 
 TitleBar.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
+        dragInputMain = input
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    if input == dragInputMain and draggingMain then
+        local delta = input.Position - dragStartMain
+        MainFrame.Position = UDim2.new(startPosMain.X.Scale, startPosMain.X.Offset + delta.X, startPosMain.Y.Scale, startPosMain.Y.Offset + delta.Y)
     end
-end)
-
-CloseBtn.MouseButton1Click:Connect(function()
-    TweenService:Create(MainFrame, TweenInfo.new(0.2), {Size = UDim2.new(0, 0, 0, 0)}):Play()
-    task.wait(0.2)
-    ScreenGui:Destroy()
 end)
 
 MainFrame.Size = UDim2.new(0, 0, 0, 0)
