@@ -20,67 +20,44 @@ local function ProtectGUI(gui)
 end
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "VORTEX_CYBER_HUB"
+ScreenGui.Name = "VORTEX_MINI_HUB"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ProtectGUI(ScreenGui)
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 360, 0, 240)
-MainFrame.Position = UDim2.new(0.5, -180, 0.5, -120)
+MainFrame.Size = UDim2.new(0, 220, 0, 260)
+MainFrame.Position = UDim2.new(0.5, -110, 0.5, -130)
 MainFrame.BackgroundColor3 = Color3.fromRGB(10, 14, 20)
 MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = true
 MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 16)
+MainCorner.CornerRadius = UDim.new(0, 10)
 MainCorner.Parent = MainFrame
 
 local MainStroke = Instance.new("UIStroke")
 MainStroke.Color = Color3.fromRGB(0, 255, 200)
-MainStroke.Thickness = 2
-MainStroke.Transparency = 0.2
+MainStroke.Thickness = 1.5
+MainStroke.Transparency = 0.3
 MainStroke.Parent = MainFrame
-
-local MainGradient = Instance.new("UIGradient")
-MainGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 25, 35)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(10, 15, 22)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 8, 12))
-})
-MainGradient.Rotation = 45
-MainGradient.Parent = MainFrame
-
-local GlowShadow = Instance.new("ImageLabel")
-GlowShadow.Name = "GlowShadow"
-GlowShadow.AnchorPoint = Vector2.new(0.5, 0.5)
-GlowShadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-GlowShadow.Size = UDim2.new(1, 70, 1, 70)
-GlowShadow.BackgroundTransparency = 1
-GlowShadow.Image = "rbxassetid://5554236805"
-GlowShadow.ImageColor3 = Color3.fromRGB(0, 255, 200)
-GlowShadow.ImageTransparency = 0.7
-GlowShadow.ScaleType = Enum.ScaleType.Slice
-GlowShadow.SliceCenter = Rect.new(23, 23, 277, 277)
-GlowShadow.ZIndex = -1
-GlowShadow.Parent = MainFrame
 
 local TitleBar = Instance.new("Frame")
 TitleBar.Name = "TitleBar"
-TitleBar.Size = UDim2.new(1, 0, 0, 46)
-TitleBar.BackgroundColor3 = Color3.fromRGB(12, 18, 26)
+TitleBar.Size = UDim2.new(1, 0, 0, 32)
+TitleBar.BackgroundColor3 = Color3.fromRGB(15, 22, 30)
 TitleBar.BorderSizePixel = 0
 TitleBar.Parent = MainFrame
 
 local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 16)
+TitleCorner.CornerRadius = UDim.new(0, 10)
 TitleCorner.Parent = TitleBar
 
 local StatusDot = Instance.new("Frame")
-StatusDot.Size = UDim2.new(0, 8, 0, 8)
-StatusDot.Position = UDim2.new(0, 16, 0.5, -4)
+StatusDot.Size = UDim2.new(0, 6, 0, 6)
+StatusDot.Position = UDim2.new(0, 10, 0.5, -3)
 StatusDot.BackgroundColor3 = Color3.fromRGB(0, 255, 170)
 StatusDot.BorderSizePixel = 0
 StatusDot.Parent = TitleBar
@@ -91,77 +68,122 @@ DotCorner.Parent = StatusDot
 
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Name = "Title"
-TitleLabel.Size = UDim2.new(1, -70, 1, 0)
-TitleLabel.Position = UDim2.new(0, 32, 0, 0)
+TitleLabel.Size = UDim2.new(1, -45, 1, 0)
+TitleLabel.Position = UDim2.new(0, 22, 0, 0)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "CYBER-HUB // BREAK IN"
+TitleLabel.Text = "CYBER ITEM SPAWNER"
 TitleLabel.TextColor3 = Color3.fromRGB(220, 255, 250)
-TitleLabel.TextSize = 15
+TitleLabel.TextSize = 11
 TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.Parent = TitleBar
 
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Name = "Close"
-CloseBtn.Size = UDim2.new(0, 28, 0, 28)
-CloseBtn.Position = UDim2.new(1, -36, 0.5, -14)
+CloseBtn.Size = UDim2.new(0, 20, 0, 20)
+CloseBtn.Position = UDim2.new(1, -26, 0.5, -10)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 45, 85)
 CloseBtn.BackgroundTransparency = 0.2
 CloseBtn.Text = "✕"
 CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.TextSize = 14
+CloseBtn.TextSize = 10
 CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.Parent = TitleBar
 
 local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.CornerRadius = UDim.new(0, 5)
 CloseCorner.Parent = CloseBtn
 
-local Content = Instance.new("Frame")
-Content.Name = "Content"
-Content.Size = UDim2.new(1, -28, 1, -62)
-Content.Position = UDim2.new(0, 14, 0, 52)
-Content.BackgroundTransparency = 1
-Content.Parent = MainFrame
+local ScrollFrame = Instance.new("ScrollingFrame")
+ScrollFrame.Name = "ScrollFrame"
+ScrollFrame.Size = UDim2.new(1, -12, 1, -60)
+ScrollFrame.Position = UDim2.new(0, 6, 0, 36)
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.BorderSizePixel = 0
+ScrollFrame.ScrollBarThickness = 3
+ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 200)
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScrollFrame.Parent = MainFrame
 
-local ColaButton = Instance.new("TextButton")
-ColaButton.Name = "ColaButton"
-ColaButton.Size = UDim2.new(1, 0, 0, 52)
-ColaButton.Position = UDim2.new(0, 0, 0, 10)
-ColaButton.BackgroundColor3 = Color3.fromRGB(0, 180, 140)
-ColaButton.Text = "⚡ GET BLOXY COLA"
-ColaButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ColaButton.TextSize = 16
-ColaButton.Font = Enum.Font.GothamBlack
-ColaButton.Parent = Content
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = ScrollFrame
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 5)
 
-local BtnCorner = Instance.new("UICorner")
-BtnCorner.CornerRadius = UDim.new(0, 12)
-BtnCorner.Parent = ColaButton
-
-local BtnStroke = Instance.new("UIStroke")
-BtnStroke.Color = Color3.fromRGB(0, 255, 200)
-BtnStroke.Thickness = 1.5
-BtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-BtnStroke.Parent = ColaButton
-
-local BtnGradient = Instance.new("UIGradient")
-BtnGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 200, 150)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 120, 100))
-})
-BtnGradient.Rotation = 90
-BtnGradient.Parent = ColaButton
+UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y + 5)
+end)
 
 local SubText = Instance.new("TextLabel")
-SubText.Size = UDim2.new(1, 0, 0, 20)
-SubText.Position = UDim2.new(0, 0, 0, 72)
+SubText.Size = UDim2.new(1, -12, 0, 16)
+SubText.Position = UDim2.new(0, 6, 1, -20)
 SubText.BackgroundTransparency = 1
-SubText.Text = "Status: Ready to execute"
+SubText.Text = "Status: Ready"
 SubText.TextColor3 = Color3.fromRGB(120, 160, 170)
-SubText.TextSize = 12
+SubText.TextSize = 10
 SubText.Font = Enum.Font.Code
-SubText.Parent = Content
+SubText.TextXAlignment = Enum.TextXAlignment.Left
+SubText.Parent = MainFrame
+
+local function CreateItemButton(itemName, displayName)
+    local Btn = Instance.new("TextButton")
+    Btn.Name = itemName .. "Btn"
+    Btn.Size = UDim2.new(1, -6, 0, 28)
+    Btn.BackgroundColor3 = Color3.fromRGB(18, 26, 36)
+    Btn.Text = "  " .. displayName
+    Btn.TextColor3 = Color3.fromRGB(200, 240, 255)
+    Btn.TextSize = 11
+    Btn.Font = Enum.Font.GothamMedium
+    Btn.TextXAlignment = Enum.TextXAlignment.Left
+    Btn.Parent = ScrollFrame
+
+    local BtnCorner = Instance.new("UICorner")
+    BtnCorner.CornerRadius = UDim.new(0, 6)
+    BtnCorner.Parent = Btn
+
+    local BtnStroke = Instance.new("UIStroke")
+    BtnStroke.Color = Color3.fromRGB(0, 255, 200)
+    BtnStroke.Thickness = 1
+    BtnStroke.Transparency = 0.7
+    BtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    BtnStroke.Parent = Btn
+
+    Btn.MouseEnter:Connect(function()
+        TweenService:Create(Btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(25, 40, 55)}):Play()
+        TweenService:Create(BtnStroke, TweenInfo.new(0.15), {Transparency = 0.2}):Play()
+    end)
+
+    Btn.MouseLeave:Connect(function()
+        TweenService:Create(Btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(18, 26, 36)}):Play()
+        TweenService:Create(BtnStroke, TweenInfo.new(0.15), {Transparency = 0.7}):Play()
+    end)
+
+    Btn.MouseButton1Click:Connect(function()
+        SubText.Text = "Spawning: " .. itemName
+        SubText.TextColor3 = Color3.fromRGB(0, 255, 170)
+
+        local remote = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GiveTool")
+        if remote then
+            remote:FireServer(itemName)
+        else
+            SubText.Text = "Error: Event Not Found"
+            SubText.TextColor3 = Color3.fromRGB(255, 80, 80)
+        end
+    end)
+end
+
+-- รายการไอเทมทั้งหมดในเกม (สามารถเพิ่มบรรทัดใหม่ตรงนี้ได้ตลอด)
+CreateItemButton("BloxyCola", "⚡ Bloxy Cola")
+CreateItemButton("PiePan", "🥧 Pie Pan ($40)")
+CreateItemButton("Apple", "🍎 Apple")
+CreateItemButton("Pizza", "🍕 Pizza")
+CreateItemButton("Cookie", "🍪 Cookie")
+CreateItemButton("Chips", "🍟 Chips")
+CreateItemButton("Medkit", "🩹 Medkit")
+CreateItemButton("Cure", "🧪 Vaccine / Cure")
+CreateItemButton("Bat", "🏏 Bat")
+CreateItemButton("Sword", "⚔️ Sword")
+CreateItemButton("Armor", "🛡️ Armor")
 
 local dragging, dragInput, dragStart, startPos
 
@@ -191,46 +213,16 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
-ColaButton.MouseEnter:Connect(function()
-    TweenService:Create(ColaButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 230, 170)}):Play()
-    TweenService:Create(BtnStroke, TweenInfo.new(0.2), {Thickness = 2.5}):Play()
-end)
-
-ColaButton.MouseLeave:Connect(function()
-    TweenService:Create(ColaButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 180, 140)}):Play()
-    TweenService:Create(BtnStroke, TweenInfo.new(0.2), {Thickness = 1.5}):Play()
-end)
-
-ColaButton.MouseButton1Click:Connect(function()
-    TweenService:Create(ColaButton, TweenInfo.new(0.08), {Size = UDim2.new(0.97, 0, 0, 48)}):Play()
-    task.wait(0.08)
-    TweenService:Create(ColaButton, TweenInfo.new(0.08), {Size = UDim2.new(1, 0, 0, 52)}):Play()
-    
-    SubText.Text = "Status: Sent BloxyCola Request..."
-    SubText.TextColor3 = Color3.fromRGB(0, 255, 170)
-    
-    local remote = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GiveTool")
-    if remote then
-        remote:FireServer("BloxyCola")
-    else
-        SubText.Text = "Status: RemoteEvent Not Found!"
-        SubText.TextColor3 = Color3.fromRGB(255, 80, 80)
-    end
-end)
-
 CloseBtn.MouseButton1Click:Connect(function()
-    TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
-        Size = UDim2.new(0, 0, 0, 0),
-        BackgroundTransparency = 1
-    }):Play()
-    task.wait(0.3)
+    TweenService:Create(MainFrame, TweenInfo.new(0.2), {Size = UDim2.new(0, 0, 0, 0)}):Play()
+    task.wait(0.2)
     ScreenGui:Destroy()
 end)
 
 MainFrame.Size = UDim2.new(0, 0, 0, 0)
 MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-    Size = UDim2.new(0, 360, 0, 240),
-    Position = UDim2.new(0.5, -180, 0.5, -120)
+TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+    Size = UDim2.new(0, 220, 0, 260),
+    Position = UDim2.new(0.5, -110, 0.5, -130)
 }):Play()
 
