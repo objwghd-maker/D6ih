@@ -1,6 +1,5 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
@@ -27,8 +26,8 @@ ProtectGUI(ScreenGui)
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 220, 0, 260)
-MainFrame.Position = UDim2.new(0.5, -110, 0.5, -130)
+MainFrame.Size = UDim2.new(0, 220, 0, 230)
+MainFrame.Position = UDim2.new(0.5, -110, 0.5, -115)
 MainFrame.BackgroundColor3 = Color3.fromRGB(10, 14, 20)
 MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = true
@@ -140,17 +139,19 @@ local function GiveItemRemote(itemName)
             local targetRemote = re:FindFirstChild(rName)
             if targetRemote and targetRemote:IsA("RemoteEvent") then
                 targetRemote:FireServer(itemName)
+                return
             end
         end
     end
     for _, obj in pairs(ReplicatedStorage:GetDescendants()) do
         if obj:IsA("RemoteEvent") and (obj.Name == "GiveTool" or obj.Name == "GiveItem") then
             obj:FireServer(itemName)
+            return
         end
     end
 end
 
-local function CreateItemButton(itemIds, displayName)
+local function CreateItemButton(itemName, displayName)
     local Btn = Instance.new("TextButton")
     Btn.Name = displayName .. "Btn"
     Btn.Size = UDim2.new(1, -6, 0, 28)
@@ -174,40 +175,30 @@ local function CreateItemButton(itemIds, displayName)
     BtnStroke.Parent = Btn
 
     Btn.MouseEnter:Connect(function()
-        TweenService:Create(Btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(25, 40, 55)}):Play()
-        TweenService:Create(BtnStroke, TweenInfo.new(0.15), {Transparency = 0.2}):Play()
+        Btn.BackgroundColor3 = Color3.fromRGB(25, 40, 55)
+        BtnStroke.Transparency = 0.2
     end)
 
     Btn.MouseLeave:Connect(function()
-        TweenService:Create(Btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(18, 26, 36)}):Play()
-        TweenService:Create(BtnStroke, TweenInfo.new(0.15), {Transparency = 0.7}):Play()
+        Btn.BackgroundColor3 = Color3.fromRGB(18, 26, 36)
+        BtnStroke.Transparency = 0.7
     end)
 
     Btn.MouseButton1Click:Connect(function()
-        SubText.Text = "Spawning..."
+        SubText.Text = "Spawning: " .. displayName
         SubText.TextColor3 = Color3.fromRGB(0, 255, 170)
-        
-        if type(itemIds) == "table" then
-            for _, id in ipairs(itemIds) do
-                GiveItemRemote(id)
-            end
-        else
-            GiveItemRemote(itemIds)
-        end
+        GiveItemRemote(itemName)
     end)
 end
 
 CreateItemButton("BloxyCola", "⚡ Bloxy Cola")
-CreateItemButton({"Cure", "Vaccine", "CureCan", "EnergyDrink"}, "🧪 กระป๋องยา / Cure")
-CreateItemButton({"Medkit", "Med Kit", "FirstAid"}, "🩹 กล่องยา 1 (Medkit)")
-CreateItemButton({"Bandage", "Bandages", "HealingKit"}, "🩹 กล่องยา 2 (Bandage)")
+CreateItemButton("Cure", "🧪 กระป๋องยา (Cure)")
+CreateItemButton("Medkit", "🩹 กล่องยา 1 (Medkit)")
+CreateItemButton("Bandage", "🩹 กล่องยา 2 (Bandage)")
 CreateItemButton("Apple", "🍎 Apple")
 CreateItemButton("Pizza", "🍕 Pizza")
 CreateItemButton("Cookie", "🍪 Cookie")
 CreateItemButton("Chips", "🍟 Chips")
-CreateItemButton({"Bat", "BaseballBat"}, "🏏 Bat")
-CreateItemButton("Sword", "⚔️ Sword")
-CreateItemButton("Armor", "🛡️ Armor")
 
 local isMinimized = false
 MinimizeBtn.MouseButton1Click:Connect(function()
@@ -219,7 +210,7 @@ MinimizeBtn.MouseButton1Click:Connect(function()
         MainFrame:TweenSize(UDim2.new(0, 220, 0, 32), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.2, true)
     else
         MinimizeBtn.Text = "─"
-        MainFrame:TweenSize(UDim2.new(0, 220, 0, 260), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.2, true, function()
+        MainFrame:TweenSize(UDim2.new(0, 220, 0, 230), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.2, true, function()
             ContentContainer.Visible = true
         end)
     end
