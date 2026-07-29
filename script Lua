@@ -20,7 +20,7 @@ local function ProtectGUI(gui)
 end
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "VORTEX_MINI_HUB"
+ScreenGui.Name = "VORTEX_FIXED_HUB"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ProtectGUI(ScreenGui)
@@ -94,16 +94,23 @@ local MinCorner = Instance.new("UICorner")
 MinCorner.CornerRadius = UDim.new(0, 5)
 MinCorner.Parent = MinimizeBtn
 
+local ContentContainer = Instance.new("Frame")
+ContentContainer.Name = "ContentContainer"
+ContentContainer.Size = UDim2.new(1, 0, 1, -32)
+ContentContainer.Position = UDim2.new(0, 0, 0, 32)
+ContentContainer.BackgroundTransparency = 1
+ContentContainer.Parent = MainFrame
+
 local ScrollFrame = Instance.new("ScrollingFrame")
 ScrollFrame.Name = "ScrollFrame"
-ScrollFrame.Size = UDim2.new(1, -12, 1, -60)
-ScrollFrame.Position = UDim2.new(0, 6, 0, 36)
+ScrollFrame.Size = UDim2.new(1, -12, 1, -24)
+ScrollFrame.Position = UDim2.new(0, 6, 0, 4)
 ScrollFrame.BackgroundTransparency = 1
 ScrollFrame.BorderSizePixel = 0
 ScrollFrame.ScrollBarThickness = 3
 ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 200)
 ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-ScrollFrame.Parent = MainFrame
+ScrollFrame.Parent = ContentContainer
 
 local UIListLayout = Instance.new("UIListLayout")
 UIListLayout.Parent = ScrollFrame
@@ -116,18 +123,36 @@ end)
 
 local SubText = Instance.new("TextLabel")
 SubText.Size = UDim2.new(1, -12, 0, 16)
-SubText.Position = UDim2.new(0, 6, 1, -20)
+SubText.Position = UDim2.new(0, 6, 1, -18)
 SubText.BackgroundTransparency = 1
 SubText.Text = "Status: Ready"
 SubText.TextColor3 = Color3.fromRGB(120, 160, 170)
 SubText.TextSize = 10
 SubText.Font = Enum.Font.Code
 SubText.TextXAlignment = Enum.TextXAlignment.Left
-SubText.Parent = MainFrame
+SubText.Parent = ContentContainer
 
-local function CreateItemButton(itemName, displayName)
+local function GiveItemRemote(itemName)
+    local re = ReplicatedStorage:FindFirstChild("RemoteEvents")
+    if re then
+        local remoteNames = {"GiveTool", "GiveItem", "BuyItem", "GetItem"}
+        for _, rName in pairs(remoteNames) do
+            local targetRemote = re:FindFirstChild(rName)
+            if targetRemote and targetRemote:IsA("RemoteEvent") then
+                targetRemote:FireServer(itemName)
+            end
+        end
+    end
+    for _, obj in pairs(ReplicatedStorage:GetDescendants()) do
+        if obj:IsA("RemoteEvent") and (obj.Name == "GiveTool" or obj.Name == "GiveItem") then
+            obj:FireServer(itemName)
+        end
+    end
+end
+
+local function CreateItemButton(itemIds, displayName)
     local Btn = Instance.new("TextButton")
-    Btn.Name = itemName .. "Btn"
+    Btn.Name = displayName .. "Btn"
     Btn.Size = UDim2.new(1, -6, 0, 28)
     Btn.BackgroundColor3 = Color3.fromRGB(18, 26, 36)
     Btn.Text = "  " .. displayName
@@ -159,28 +184,28 @@ local function CreateItemButton(itemName, displayName)
     end)
 
     Btn.MouseButton1Click:Connect(function()
-        SubText.Text = "Spawning: " .. itemName
+        SubText.Text = "Spawning..."
         SubText.TextColor3 = Color3.fromRGB(0, 255, 170)
-
-        local remote = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GiveTool")
-        if remote then
-            remote:FireServer(itemName)
+        
+        if type(itemIds) == "table" then
+            for _, id in ipairs(itemIds) do
+                GiveItemRemote(id)
+            end
         else
-            SubText.Text = "Error: Event Not Found"
-            SubText.TextColor3 = Color3.fromRGB(255, 80, 80)
+            GiveItemRemote(itemIds)
         end
     end)
 end
 
 CreateItemButton("BloxyCola", "⚡ Bloxy Cola")
-CreateItemButton("Cure", "🧪 กระป๋องยา (Cure / Vaccine)")
-CreateItemButton("Medkit", "🩹 กล่องยา 1 (Medkit)")
-CreateItemButton("Bandage", "🩹 กล่องยา 2 (Bandage)")
+CreateItemButton({"Cure", "Vaccine", "CureCan", "EnergyDrink"}, "🧪 กระป๋องยา / Cure")
+CreateItemButton({"Medkit", "Med Kit", "FirstAid"}, "🩹 กล่องยา 1 (Medkit)")
+CreateItemButton({"Bandage", "Bandages", "HealingKit"}, "🩹 กล่องยา 2 (Bandage)")
 CreateItemButton("Apple", "🍎 Apple")
 CreateItemButton("Pizza", "🍕 Pizza")
 CreateItemButton("Cookie", "🍪 Cookie")
 CreateItemButton("Chips", "🍟 Chips")
-CreateItemButton("Bat", "🏏 Bat")
+CreateItemButton({"Bat", "BaseballBat"}, "🏏 Bat")
 CreateItemButton("Sword", "⚔️ Sword")
 CreateItemButton("Armor", "🛡️ Armor")
 
@@ -190,14 +215,13 @@ MinimizeBtn.MouseButton1Click:Connect(function()
     
     if isMinimized then
         MinimizeBtn.Text = "+"
-        TweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-            Size = UDim2.new(0, 220, 0, 32)
-        }):Play()
+        ContentContainer.Visible = false
+        MainFrame:TweenSize(UDim2.new(0, 220, 0, 32), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.2, true)
     else
         MinimizeBtn.Text = "─"
-        TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-            Size = UDim2.new(0, 220, 0, 260)
-        }):Play()
+        MainFrame:TweenSize(UDim2.new(0, 220, 0, 260), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.2, true, function()
+            ContentContainer.Visible = true
+        end)
     end
 end)
 
@@ -225,11 +249,4 @@ UserInputService.InputChanged:Connect(function(input)
         MainFrame.Position = UDim2.new(startPosMain.X.Scale, startPosMain.X.Offset + delta.X, startPosMain.Y.Scale, startPosMain.Y.Offset + delta.Y)
     end
 end)
-
-MainFrame.Size = UDim2.new(0, 0, 0, 0)
-MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-    Size = UDim2.new(0, 220, 0, 260),
-    Position = UDim2.new(0.5, -110, 0.5, -130)
-}):Play()
 
