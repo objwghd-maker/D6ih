@@ -131,27 +131,32 @@ SubText.Font = Enum.Font.Code
 SubText.TextXAlignment = Enum.TextXAlignment.Left
 SubText.Parent = ContentContainer
 
-local function GiveItemRemote(itemName)
+local function GiveItemRemote(itemName, itemArg)
     local re = ReplicatedStorage:FindFirstChild("RemoteEvents")
     if re then
-        local remoteNames = {"GiveTool", "GiveItem", "BuyItem", "GetItem"}
-        for _, rName in pairs(remoteNames) do
-            local targetRemote = re:FindFirstChild(rName)
-            if targetRemote and targetRemote:IsA("RemoteEvent") then
-                targetRemote:FireServer(itemName)
-                return
+        local remote = re:FindFirstChild("GiveTool") or re:FindFirstChild("GiveItem") or re:FindFirstChild("BuyItem")
+        if remote and remote:IsA("RemoteEvent") then
+            if itemArg ~= nil then
+                remote:FireServer(itemName, itemArg)
+            else
+                remote:FireServer(itemName)
             end
+            return
         end
     end
     for _, obj in pairs(ReplicatedStorage:GetDescendants()) do
         if obj:IsA("RemoteEvent") and (obj.Name == "GiveTool" or obj.Name == "GiveItem") then
-            obj:FireServer(itemName)
+            if itemArg ~= nil then
+                obj:FireServer(itemName, itemArg)
+            else
+                obj:FireServer(itemName)
+            end
             return
         end
     end
 end
 
-local function CreateItemButton(itemName, displayName)
+local function CreateItemButton(itemName, displayName, itemArg)
     local Btn = Instance.new("TextButton")
     Btn.Name = displayName .. "Btn"
     Btn.Size = UDim2.new(1, -6, 0, 28)
@@ -187,16 +192,15 @@ local function CreateItemButton(itemName, displayName)
     Btn.MouseButton1Click:Connect(function()
         SubText.Text = "Spawning: " .. displayName
         SubText.TextColor3 = Color3.fromRGB(0, 255, 170)
-        GiveItemRemote(itemName)
+        GiveItemRemote(itemName, itemArg)
     end)
 end
 
 CreateItemButton("BloxyCola", "⚡ Bloxy Cola")
-CreateItemButton("Cure", "🧪 กระป๋องยา (Cure)")
-CreateItemButton("Medkit", "🩹 กล่องยา 1 (Medkit)")
-CreateItemButton("Bandage", "🩹 กล่องยา 2 (Bandage)")
+CreateItemButton("Medkit", "💊 Medkit")
+CreateItemButton("Cure", "🩹 Red Medkit")
 CreateItemButton("Apple", "🍎 Apple")
-CreateItemButton("Pizza", "🍕 Pizza")
+CreateItemButton("Pizza", "🍕 Pizza", 20)
 CreateItemButton("Cookie", "🍪 Cookie")
 CreateItemButton("Chips", "🍟 Chips")
 
