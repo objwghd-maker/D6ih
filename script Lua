@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -244,4 +245,73 @@ UserInputService.InputChanged:Connect(function(input)
         MainFrame.Position = UDim2.new(startPosMain.X.Scale, startPosMain.X.Offset + delta.X, startPosMain.Y.Scale, startPosMain.Y.Offset + delta.Y)
     end
 end)
+
+local function HighlightNPC(model)
+    if not model:IsA("Model") or model:FindFirstChildOfClass("Humanoid") == nil then return end
+    if Players:GetPlayerFromCharacter(model) then return end
+    if model:FindFirstChild("NPCHighlight") then return end
+
+    local npcName = string.lower(model.Name)
+    
+    local isUnclePete = string.find(npcName, "pete") 
+        or string.find(npcName, "uncle") 
+        or string.find(npcName, "crazy")
+
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "NPCHighlight"
+    highlight.Adornee = model
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Parent = model
+
+    if isUnclePete then
+        highlight.FillColor = Color3.fromRGB(255, 215, 0)
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.FillTransparency = 0.1
+        highlight.OutlineTransparency = 0
+
+        local head = model:FindFirstChild("Head") or model.PrimaryPart
+        if head and not head:FindFirstChild("UncleTag") then
+            local billboard = Instance.new("BillboardGui")
+            billboard.Name = "UncleTag"
+            billboard.Size = UDim2.new(0, 200, 0, 30)
+            billboard.StudsOffset = Vector3.new(0, 3.5, 0)
+            billboard.AlwaysOnTop = true
+            billboard.Parent = head
+
+            local label = Instance.new("TextLabel")
+            label.Size = UDim2.new(1, 0, 1, 0)
+            label.BackgroundTransparency = 1
+            label.Text = "★ UNCLE PETE ★"
+            label.TextColor3 = Color3.fromRGB(255, 215, 0)
+            label.TextStrokeTransparency = 0
+            label.TextSize = 14
+            label.Font = Enum.Font.GothamBlack
+            label.Parent = billboard
+        end
+    else
+        highlight.FillColor = Color3.fromRGB(255, 0, 0)
+        highlight.OutlineColor = Color3.fromRGB(150, 0, 0)
+        highlight.FillTransparency = 0.4
+        highlight.OutlineTransparency = 0.1
+    end
+end
+
+local function ScanNPCs()
+    for _, object in pairs(Workspace:GetDescendants()) do
+        if object:IsA("Model") and object:FindFirstChildOfClass("Humanoid") then
+            HighlightNPC(object)
+        end
+    end
+end
+
+Workspace.DescendantAdded:Connect(function(descendant)
+    if descendant:IsA("Model") then
+        task.wait(0.3)
+        if descendant:FindFirstChildOfClass("Humanoid") then
+            HighlightNPC(descendant)
+        end
+    end
+end)
+
+ScanNPCs()
 
