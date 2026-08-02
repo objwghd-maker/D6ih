@@ -2,6 +2,9 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -11,215 +14,651 @@ local function ProtectGUI(gui)
         gui.Parent = gethui()
     elseif syn and syn.protect_gui then
         syn.protect_gui(gui)
-        gui.Parent = game:GetService("CoreGui")
-    elseif game:GetService("CoreGui"):FindFirstChild("RobloxGui") then
-        gui.Parent = game:GetService("CoreGui")
+        gui.Parent = CoreGui
+    elseif CoreGui:FindFirstChild("RobloxGui") then
+        gui.Parent = CoreGui
     else
         gui.Parent = PlayerGui
     end
 end
 
+local function FindRemoteEvent(pattern)
+    local found = {}
+    for _, obj in pairs(ReplicatedStorage:GetDescendants()) do
+        if obj:IsA("RemoteEvent") then
+            local name = obj.Name:lower()
+            if not pattern or name:find(pattern:lower()) then
+                table.insert(found, obj)
+            end
+        end
+    end
+    return found
+end
+
+local function FireRemote(remote, ...)
+    if remote and remote:IsA("RemoteEvent") then
+        remote:FireServer(...)
+        return true
+    end
+    return false
+end
+
+local function GetPlayerStats()
+    local stats = {
+        Name = LocalPlayer.Name,
+        Health = 100,
+        MaxHealth = 100,
+        Hunger = 100,
+        Thirst = 100,
+        Cash = 0,
+        Level = 1,
+        Experience = 0
+    }
+    local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
+    if leaderstats then
+        for _, stat in pairs(leaderstats:GetChildren()) do
+            local name = stat.Name:lower()
+            if name:find("cash") or name:find("money") or name:find("coin") then
+                stats.Cash = stat.Value or 0
+            elseif name:find("level") or name:find("lvl") then
+                stats.Level = stat.Value or 1
+            elseif name:find("exp") or name:find("xp") then
+                stats.Experience = stat.Value or 0
+            end
+        end
+    end
+    local character = LocalPlayer.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            stats.Health = humanoid.Health
+            stats.MaxHealth = humanoid.MaxHealth
+        end
+    end
+    return stats
+end
+
+local function CreateHighlight(model, color, outlineColor, fillTrans, outlineTrans)
+    if not model or not model:IsA("Model") then return end
+    if model:FindFirstChild("ScriptHighlight") then
+        model.ScriptHighlight:Destroy()
+    end
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ScriptHighlight"
+    highlight.Adornee = model
+    highlight.FillColor = color or Color3.fromRGB(255, 200, 50)
+    highlight.OutlineColor = outlineColor or Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = fillTrans or 0.2
+    highlight.OutlineTransparency = outlineTrans or 0
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Parent = model
+    return highlight
+end
+
+local function CreateBillboardTag(model, text, color, offset, size)
+    local head = model:FindFirstChild("Head") or model.PrimaryPart
+    if not head then return end
+    if head:FindFirstChild("ScriptTag") then
+        head.ScriptTag:Destroy()
+    end
+    local bill = Instance.new("BillboardGui")
+    bill.Name = "ScriptTag"
+    bill.Size = size or UDim2.new(0, 200, 0, 30)
+    bill.StudsOffset = offset or Vector3.new(0, 3.5, 0)
+    bill.AlwaysOnTop = true
+    bill.Parent = head
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text or "NPC"
+    label.TextColor3 = color or Color3.fromRGB(255, 215, 0)
+    label.TextStrokeTransparency = 0
+    label.TextSize = 14
+    label.Font = Enum.Font.GothamBlack
+    label.Parent = bill
+    return bill
+end
+
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BREAK_IN_SCRIPT_HUB"
+ScreenGui.Name = "BreakInHub_v2"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ProtectGUI(ScreenGui)
 
+local TweenInfoOut = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local TweenInfoIn = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 220, 0, 230)
-MainFrame.Position = UDim2.new(0.5, -110, 0.5, -115)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 18, 10)
+MainFrame.Size = UDim2.new(0, 340, 0, 420)
+MainFrame.Position = UDim2.new(0.5, -170, 0.5, -210)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 10)
+MainFrame.BackgroundTransparency = 0.05
 MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = true
 MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainFrame
 
 local MainStroke = Instance.new("UIStroke")
 MainStroke.Color = Color3.fromRGB(255, 215, 0)
 MainStroke.Thickness = 1.5
-MainStroke.Transparency = 0.2
+MainStroke.Transparency = 0.15
 MainStroke.Parent = MainFrame
+
+local Shadow = Instance.new("Frame")
+Shadow.Name = "Shadow"
+Shadow.Size = UDim2.new(1, 12, 1, 12)
+Shadow.Position = UDim2.new(0, -6, 0, -6)
+Shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Shadow.BackgroundTransparency = 0.5
+Shadow.BorderSizePixel = 0
+Shadow.ZIndex = 0
+Shadow.Parent = MainFrame
+local ShadowCorner = Instance.new("UICorner")
+ShadowCorner.CornerRadius = UDim.new(0, 16)
+ShadowCorner.Parent = Shadow
 
 local TitleBar = Instance.new("Frame")
 TitleBar.Name = "TitleBar"
-TitleBar.Size = UDim2.new(1, 0, 0, 32)
+TitleBar.Size = UDim2.new(1, 0, 0, 36)
 TitleBar.BackgroundColor3 = Color3.fromRGB(30, 26, 12)
+TitleBar.BackgroundTransparency = 0.1
 TitleBar.BorderSizePixel = 0
 TitleBar.Parent = MainFrame
 
 local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 10)
+TitleCorner.CornerRadius = UDim.new(0, 12)
 TitleCorner.Parent = TitleBar
 
+local Glow = Instance.new("Frame")
+Glow.Size = UDim2.new(1, 0, 0, 2)
+Glow.Position = UDim2.new(0, 0, 1, -2)
+Glow.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+Glow.BackgroundTransparency = 0.6
+Glow.BorderSizePixel = 0
+Glow.Parent = TitleBar
+
 local StatusDot = Instance.new("Frame")
-StatusDot.Size = UDim2.new(0, 6, 0, 6)
-StatusDot.Position = UDim2.new(0, 10, 0.5, -3)
+StatusDot.Size = UDim2.new(0, 8, 0, 8)
+StatusDot.Position = UDim2.new(0, 12, 0.5, -4)
 StatusDot.BackgroundColor3 = Color3.fromRGB(255, 230, 0)
 StatusDot.BorderSizePixel = 0
 StatusDot.Parent = TitleBar
-
 local DotCorner = Instance.new("UICorner")
 DotCorner.CornerRadius = UDim.new(1, 0)
 DotCorner.Parent = StatusDot
 
 local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Name = "Title"
-TitleLabel.Size = UDim2.new(1, -45, 1, 0)
-TitleLabel.Position = UDim2.new(0, 22, 0, 0)
+TitleLabel.Size = UDim2.new(1, -90, 1, 0)
+TitleLabel.Position = UDim2.new(0, 26, 0, 0)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "BREAK IN SCRIPT"
+TitleLabel.Text = "BREAK IN HUB v2"
 TitleLabel.TextColor3 = Color3.fromRGB(255, 235, 150)
-TitleLabel.TextSize = 11
+TitleLabel.TextSize = 13
 TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.Parent = TitleBar
 
 local MinimizeBtn = Instance.new("TextButton")
-MinimizeBtn.Name = "Minimize"
-MinimizeBtn.Size = UDim2.new(0, 22, 0, 22)
-MinimizeBtn.Position = UDim2.new(1, -28, 0.5, -11)
+MinimizeBtn.Size = UDim2.new(0, 26, 0, 26)
+MinimizeBtn.Position = UDim2.new(1, -60, 0.5, -13)
 MinimizeBtn.BackgroundColor3 = Color3.fromRGB(255, 190, 0)
 MinimizeBtn.BackgroundTransparency = 0.2
 MinimizeBtn.Text = "─"
 MinimizeBtn.TextColor3 = Color3.fromRGB(20, 18, 10)
-MinimizeBtn.TextSize = 12
+MinimizeBtn.TextSize = 14
 MinimizeBtn.Font = Enum.Font.GothamBold
 MinimizeBtn.Parent = TitleBar
-
 local MinCorner = Instance.new("UICorner")
 MinCorner.CornerRadius = UDim.new(0, 5)
 MinCorner.Parent = MinimizeBtn
 
-local ContentContainer = Instance.new("Frame")
-ContentContainer.Name = "ContentContainer"
-ContentContainer.Size = UDim2.new(1, 0, 1, -32)
-ContentContainer.Position = UDim2.new(0, 0, 0, 32)
-ContentContainer.BackgroundTransparency = 1
-ContentContainer.Parent = MainFrame
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseBtn.Position = UDim2.new(1, -30, 0.5, -13)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+CloseBtn.BackgroundTransparency = 0.2
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(20, 18, 10)
+CloseBtn.TextSize = 14
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Parent = TitleBar
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 5)
+CloseCorner.Parent = CloseBtn
 
-local ScrollFrame = Instance.new("ScrollingFrame")
-ScrollFrame.Name = "ScrollFrame"
-ScrollFrame.Size = UDim2.new(1, -12, 1, -24)
-ScrollFrame.Position = UDim2.new(0, 6, 0, 4)
-ScrollFrame.BackgroundTransparency = 1
-ScrollFrame.BorderSizePixel = 0
-ScrollFrame.ScrollBarThickness = 3
-ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(255, 215, 0)
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-ScrollFrame.Parent = ContentContainer
+local Sidebar = Instance.new("Frame")
+Sidebar.Name = "Sidebar"
+Sidebar.Size = UDim2.new(0, 48, 1, -36)
+Sidebar.Position = UDim2.new(0, 0, 0, 36)
+Sidebar.BackgroundColor3 = Color3.fromRGB(25, 22, 12)
+Sidebar.BackgroundTransparency = 0.2
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = MainFrame
 
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Parent = ScrollFrame
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 5)
+local SidebarCorner = Instance.new("UICorner")
+SidebarCorner.CornerRadius = UDim.new(0, 0)
+SidebarCorner.Parent = Sidebar
 
-UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y + 5)
+local TabButtons = {}
+local TabNames = {"Items", "NPCs", "Player", "Settings"}
+local TabIcons = {"⚡", "👤", "📊", "⚙️"}
+
+for i, name in ipairs(TabNames) do
+    local btn = Instance.new("TextButton")
+    btn.Name = name .. "Tab"
+    btn.Size = UDim2.new(1, -8, 0, 36)
+    btn.Position = UDim2.new(0, 4, 0, 8 + (i-1)*42)
+    btn.BackgroundColor3 = (i == 1) and Color3.fromRGB(60, 50, 20) or Color3.fromRGB(35, 30, 15)
+    btn.BackgroundTransparency = 0.3
+    btn.Text = TabIcons[i]
+    btn.TextColor3 = (i == 1) and Color3.fromRGB(255, 215, 0) or Color3.fromRGB(200, 180, 120)
+    btn.TextSize = 18
+    btn.Font = Enum.Font.GothamBold
+    btn.BorderSizePixel = 0
+    btn.Parent = Sidebar
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfoOut, {BackgroundTransparency = 0.1}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfoOut, {BackgroundTransparency = 0.3}):Play()
+    end)
+
+    TabButtons[name] = btn
+end
+
+local ContentArea = Instance.new("Frame")
+ContentArea.Name = "ContentArea"
+ContentArea.Size = UDim2.new(1, -56, 1, -40)
+ContentArea.Position = UDim2.new(0, 52, 0, 40)
+ContentArea.BackgroundTransparency = 1
+ContentArea.Parent = MainFrame
+
+local ContentScroll = Instance.new("ScrollingFrame")
+ContentScroll.Name = "ContentScroll"
+ContentScroll.Size = UDim2.new(1, -8, 1, -4)
+ContentScroll.Position = UDim2.new(0, 4, 0, 2)
+ContentScroll.BackgroundTransparency = 1
+ContentScroll.BorderSizePixel = 0
+ContentScroll.ScrollBarThickness = 3
+ContentScroll.ScrollBarImageColor3 = Color3.fromRGB(255, 215, 0)
+ContentScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+ContentScroll.Parent = ContentArea
+
+local ContentLayout = Instance.new("UIListLayout")
+ContentLayout.Parent = ContentScroll
+ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+ContentLayout.Padding = UDim.new(0, 6)
+
+ContentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ContentScroll.CanvasSize = UDim2.new(0, 0, 0, ContentLayout.AbsoluteContentSize.Y + 10)
 end)
 
-local SubText = Instance.new("TextLabel")
-SubText.Size = UDim2.new(1, -12, 0, 16)
-SubText.Position = UDim2.new(0, 6, 1, -18)
-SubText.BackgroundTransparency = 1
-SubText.Text = "Status: Ready"
-SubText.TextColor3 = Color3.fromRGB(200, 180, 100)
-SubText.TextSize = 10
-SubText.Font = Enum.Font.Code
-SubText.TextXAlignment = Enum.TextXAlignment.Left
-SubText.Parent = ContentContainer
+local StatusBar = Instance.new("Frame")
+StatusBar.Name = "StatusBar"
+StatusBar.Size = UDim2.new(1, -56, 0, 24)
+StatusBar.Position = UDim2.new(0, 52, 1, -26)
+StatusBar.BackgroundColor3 = Color3.fromRGB(20, 18, 10)
+StatusBar.BackgroundTransparency = 0.4
+StatusBar.BorderSizePixel = 0
+StatusBar.Parent = MainFrame
+local StatusCorner = Instance.new("UICorner")
+StatusCorner.CornerRadius = UDim.new(0, 4)
+StatusCorner.Parent = StatusBar
 
-local function GiveItemRemote(itemName, itemArg)
-    local re = ReplicatedStorage:FindFirstChild("RemoteEvents")
-    if re then
-        local remote = re:FindFirstChild("GiveTool") or re:FindFirstChild("GiveItem") or re:FindFirstChild("BuyItem")
-        if remote and remote:IsA("RemoteEvent") then
-            if itemArg ~= nil then
-                remote:FireServer(itemName, itemArg)
-            else
-                remote:FireServer(itemName)
-            end
-            return
-        end
-    end
-    for _, obj in pairs(ReplicatedStorage:GetDescendants()) do
-        if obj:IsA("RemoteEvent") and (obj.Name == "GiveTool" or obj.Name == "GiveItem") then
-            if itemArg ~= nil then
-                obj:FireServer(itemName, itemArg)
-            else
-                obj:FireServer(itemName)
-            end
-            return
-        end
-    end
-end
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(1, -10, 1, 0)
+StatusLabel.Position = UDim2.new(0, 6, 0, 0)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "◆ System Ready"
+StatusLabel.TextColor3 = Color3.fromRGB(200, 190, 140)
+StatusLabel.TextSize = 11
+StatusLabel.Font = Enum.Font.Code
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+StatusLabel.Parent = StatusBar
 
-local function CreateItemButton(itemName, displayName, itemArg)
-    local Btn = Instance.new("TextButton")
-    Btn.Name = displayName .. "Btn"
-    Btn.Size = UDim2.new(1, -6, 0, 28)
-    Btn.BackgroundColor3 = Color3.fromRGB(35, 30, 15)
-    Btn.Text = "  " .. displayName
-    Btn.TextColor3 = Color3.fromRGB(255, 235, 170)
-    Btn.TextSize = 11
-    Btn.Font = Enum.Font.GothamMedium
-    Btn.TextXAlignment = Enum.TextXAlignment.Left
-    Btn.Parent = ScrollFrame
-
-    local BtnCorner = Instance.new("UICorner")
-    BtnCorner.CornerRadius = UDim.new(0, 6)
-    BtnCorner.Parent = Btn
-
-    local BtnStroke = Instance.new("UIStroke")
-    BtnStroke.Color = Color3.fromRGB(255, 215, 0)
-    BtnStroke.Thickness = 1
-    BtnStroke.Transparency = 0.6
-    BtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    BtnStroke.Parent = Btn
-
-    Btn.MouseEnter:Connect(function()
-        Btn.BackgroundColor3 = Color3.fromRGB(50, 42, 20)
-        BtnStroke.Transparency = 0.1
-    end)
-
-    Btn.MouseLeave:Connect(function()
-        Btn.BackgroundColor3 = Color3.fromRGB(35, 30, 15)
-        BtnStroke.Transparency = 0.6
-    end)
-
-    Btn.MouseButton1Click:Connect(function()
-        SubText.Text = "Spawning: " .. displayName
-        SubText.TextColor3 = Color3.fromRGB(255, 230, 0)
-        GiveItemRemote(itemName, itemArg)
-    end)
-end
-
-CreateItemButton("BloxyCola", "⚡ Bloxy Cola")
-CreateItemButton("Cure", "🩹 Red Medkit")
-CreateItemButton("Apple", "🍎 Apple")
-CreateItemButton("Cookie", "🍪 Cookie")
-CreateItemButton("Chips", "🍟 Chips")
-
-local isMinimized = false
-MinimizeBtn.MouseButton1Click:Connect(function()
-    isMinimized = not isMinimized
-    
-    if isMinimized then
-        MinimizeBtn.Text = "+"
-        ContentContainer.Visible = false
-        MainFrame:TweenSize(UDim2.new(0, 220, 0, 32), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.2, true)
+local function SetStatus(text, color)
+    StatusLabel.Text = "◆ " .. text
+    if color then
+        StatusLabel.TextColor3 = color
     else
-        MinimizeBtn.Text = "─"
-        MainFrame:TweenSize(UDim2.new(0, 220, 0, 230), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.2, true, function(status)
-            if status == Enum.TweenStatus.Completed and not isMinimized then
-                ContentContainer.Visible = true
+        StatusLabel.TextColor3 = Color3.fromRGB(200, 190, 140)
+    end
+end
+
+local function ClearContent()
+    for _, child in pairs(ContentScroll:GetChildren()) do
+        if child:IsA("GuiObject") and child ~= ContentLayout then
+            child:Destroy()
+        end
+    end
+end
+
+local function BuildItemsTab()
+    ClearContent()
+
+    local items = {
+        {Name = "BloxyCola", Display = "⚡ Bloxy Cola", Arg = nil},
+        {Name = "Cure", Display = "🩹 Red Medkit", Arg = nil},
+        {Name = "Apple", Display = "🍎 Apple", Arg = nil},
+        {Name = "Cookie", Display = "🍪 Cookie", Arg = nil},
+        {Name = "Chips", Display = "🍟 Chips", Arg = nil},
+    }
+
+    for _, item in ipairs(items) do
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, -8, 0, 30)
+        btn.BackgroundColor3 = Color3.fromRGB(35, 30, 15)
+        btn.BackgroundTransparency = 0.3
+        btn.Text = "  " .. item.Display
+        btn.TextColor3 = Color3.fromRGB(240, 225, 180)
+        btn.TextSize = 12
+        btn.Font = Enum.Font.GothamMedium
+        btn.TextXAlignment = Enum.TextXAlignment.Left
+        btn.Parent = ContentScroll
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 6)
+        corner.Parent = btn
+
+        local stroke = Instance.new("UIStroke")
+        stroke.Color = Color3.fromRGB(255, 215, 0)
+        stroke.Thickness = 1
+        stroke.Transparency = 0.6
+        stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        stroke.Parent = btn
+
+        btn.MouseEnter:Connect(function()
+            TweenService:Create(btn, TweenInfoOut, {BackgroundTransparency = 0.1}):Play()
+            TweenService:Create(stroke, TweenInfoOut, {Transparency = 0.2}):Play()
+        end)
+        btn.MouseLeave:Connect(function()
+            TweenService:Create(btn, TweenInfoOut, {BackgroundTransparency = 0.3}):Play()
+            TweenService:Create(stroke, TweenInfoOut, {Transparency = 0.6}):Play()
+        end)
+
+        btn.MouseButton1Click:Connect(function()
+            SetStatus("Spawning " .. item.Display, Color3.fromRGB(255, 230, 0))
+            local remotes = FindRemoteEvent("give")
+            if #remotes > 0 then
+                FireRemote(remotes[1], item.Name, item.Arg)
+            else
+                local re = ReplicatedStorage:FindFirstChild("RemoteEvents")
+                if re then
+                    local remote = re:FindFirstChild("GiveTool") or re:FindFirstChild("GiveItem") or re:FindFirstChild("BuyItem")
+                    if remote then
+                        FireRemote(remote, item.Name, item.Arg)
+                    end
+                end
             end
         end)
     end
-end)
+end
+local function BuildNPCsTab()
+    ClearContent()
+
+    local refreshBtn = Instance.new("TextButton")
+    refreshBtn.Size = UDim2.new(1, -8, 0, 28)
+    refreshBtn.BackgroundColor3 = Color3.fromRGB(50, 45, 25)
+    refreshBtn.Text = "🔄 Refresh NPC List"
+    refreshBtn.TextColor3 = Color3.fromRGB(255, 215, 0)
+    refreshBtn.TextSize = 12
+    refreshBtn.Font = Enum.Font.GothamBold
+    refreshBtn.Parent = ContentScroll
+
+    local refreshCorner = Instance.new("UICorner")
+    refreshCorner.CornerRadius = UDim.new(0, 6)
+    refreshCorner.Parent = refreshBtn
+
+    local function ScanAndDisplayNPCs()
+        for _, child in pairs(ContentScroll:GetChildren()) do
+            if child ~= refreshBtn and child ~= ContentLayout then
+                child:Destroy()
+            end
+        end
+
+        local npcs = {}
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            if obj:IsA("Model") and obj:FindFirstChildOfClass("Humanoid") and not Players:GetPlayerFromCharacter(obj) then
+                table.insert(npcs, obj)
+            end
+        end
+
+        if #npcs == 0 then
+            local lbl = Instance.new("TextLabel")
+            lbl.Size = UDim2.new(1, -8, 0, 24)
+            lbl.BackgroundTransparency = 1
+            lbl.Text = "No NPCs found"
+            lbl.TextColor3 = Color3.fromRGB(150, 140, 100)
+            lbl.TextSize = 12
+            lbl.Font = Enum.Font.GothamLight
+            lbl.Parent = ContentScroll
+            return
+        end
+
+        for _, npc in ipairs(npcs) do
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(1, -8, 0, 28)
+            btn.BackgroundColor3 = Color3.fromRGB(35, 30, 15)
+            btn.BackgroundTransparency = 0.3
+            btn.Text = "  " .. npc.Name
+            btn.TextColor3 = Color3.fromRGB(220, 210, 170)
+            btn.TextSize = 11
+            btn.Font = Enum.Font.GothamMedium
+            btn.TextXAlignment = Enum.TextXAlignment.Left
+            btn.Parent = ContentScroll
+
+            local corner = Instance.new("UICorner")
+            corner.CornerRadius = UDim.new(0, 6)
+            corner.Parent = btn
+
+            local stroke = Instance.new("UIStroke")
+            stroke.Color = Color3.fromRGB(200, 180, 100)
+            stroke.Thickness = 1
+            stroke.Transparency = 0.7
+            stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+            stroke.Parent = btn
+
+            local isUncle = string.lower(npc.Name):find("pete") or string.lower(npc.Name):find("uncle")
+
+            btn.MouseEnter:Connect(function()
+                TweenService:Create(btn, TweenInfoOut, {BackgroundTransparency = 0.1}):Play()
+                TweenService:Create(stroke, TweenInfoOut, {Transparency = 0.2}):Play()
+                if isUncle then
+                    CreateHighlight(npc, Color3.fromRGB(255, 215, 0), Color3.fromRGB(255, 255, 255), 0.1, 0)
+                else
+                    CreateHighlight(npc, Color3.fromRGB(255, 170, 0), Color3.fromRGB(150, 100, 0), 0.3, 0.1)
+                end
+            end)
+            btn.MouseLeave:Connect(function()
+                TweenService:Create(btn, TweenInfoOut, {BackgroundTransparency = 0.3}):Play()
+                TweenService:Create(stroke, TweenInfoOut, {Transparency = 0.7}):Play()
+                local h = npc:FindFirstChild("ScriptHighlight")
+                if h then h:Destroy() end
+            end)
+
+            btn.MouseButton1Click:Connect(function()
+                local hrp = npc:FindFirstChild("HumanoidRootPart") or npc.PrimaryPart
+                if hrp and LocalPlayer.Character then
+                    LocalPlayer.Character:SetPrimaryPartCFrame(hrp.CFrame * CFrame.new(0, 0, 3))
+                    SetStatus("Teleported to " .. npc.Name, Color3.fromRGB(100, 255, 100))
+                end
+            end)
+        end
+    end
+
+    refreshBtn.MouseButton1Click:Connect(ScanAndDisplayNPCs)
+    ScanAndDisplayNPCs()
+
+    local updateConnection
+    updateConnection = RunService.Heartbeat:Connect(function()
+        if not ContentScroll:IsDescendantOf(Players.LocalPlayer) then
+            updateConnection:Disconnect()
+            return
+        end
+        ScanAndDisplayNPCs()
+    end)
+    task.wait(10)
+end
+
+local function BuildPlayerTab()
+    ClearContent()
+
+    local function UpdateStats()
+        for _, child in pairs(ContentScroll:GetChildren()) do
+            if child:IsA("TextLabel") and child.Name == "StatLabel" then
+                child:Destroy()
+            end
+        end
+
+        local stats = GetPlayerStats()
+        local statLines = {
+            "👤 Name: " .. stats.Name,
+            "❤️ Health: " .. math.floor(stats.Health) .. "/" .. math.floor(stats.MaxHealth),
+            "💰 Cash: $" .. stats.Cash,
+            "⭐ Level: " .. stats.Level,
+            "📈 XP: " .. stats.Experience,
+            "🍖 Hunger: " .. stats.Hunger .. "%",
+            "💧 Thirst: " .. stats.Thirst .. "%",
+        }
+
+        for _, line in ipairs(statLines) do
+            local lbl = Instance.new("TextLabel")
+            lbl.Name = "StatLabel"
+            lbl.Size = UDim2.new(1, -8, 0, 24)
+            lbl.BackgroundTransparency = 1
+            lbl.Text = line
+            lbl.TextColor3 = Color3.fromRGB(220, 210, 170)
+            lbl.TextSize = 12
+            lbl.Font = Enum.Font.GothamMedium
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.Parent = ContentScroll
+        end
+    end
+
+    UpdateStats()
+
+    local conn
+    conn = RunService.Heartbeat:Connect(function()
+        if not ContentScroll:IsDescendantOf(Players.LocalPlayer) then
+            conn:Disconnect()
+            return
+        end
+        UpdateStats()
+    end)
+end
+
+local function BuildSettingsTab()
+    ClearContent()
+
+    local settings = {
+        {Label = "🔊 Sound Effects", Type = "Toggle", Default = true},
+        {Label = "🎨 Theme Color", Type = "Color", Default = Color3.fromRGB(255, 215, 0)},
+        {Label = "📐 Transparency", Type = "Slider", Default = 0.2, Min = 0, Max = 0.8},
+        {Label = "🔄 Auto-Refresh NPCs", Type = "Toggle", Default = true},
+    }
+
+    for _, setting in ipairs(settings) do
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(1, -8, 0, 30)
+        frame.BackgroundTransparency = 1
+        frame.Parent = ContentScroll
+
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(0.7, -10, 1, 0)
+        label.BackgroundTransparency = 1
+        label.Text = setting.Label
+        label.TextColor3 = Color3.fromRGB(220, 210, 170)
+        label.TextSize = 12
+        label.Font = Enum.Font.GothamMedium
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Parent = frame
+
+        if setting.Type == "Toggle" then
+            local toggle = Instance.new("TextButton")
+            toggle.Size = UDim2.new(0, 60, 0, 24)
+            toggle.Position = UDim2.new(1, -64, 0.5, -12)
+            toggle.BackgroundColor3 = setting.Default and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(80, 70, 50)
+            toggle.Text = setting.Default and "ON" or "OFF"
+            toggle.TextColor3 = Color3.fromRGB(20, 18, 10)
+            toggle.TextSize = 11
+            toggle.Font = Enum.Font.GothamBold
+            toggle.Parent = frame
+            local tcorner = Instance.new("UICorner")
+            tcorner.CornerRadius = UDim.new(0, 6)
+            tcorner.Parent = toggle
+
+            local state = setting.Default
+            toggle.MouseButton1Click:Connect(function()
+                state = not state
+                toggle.BackgroundColor3 = state and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(80, 70, 50)
+                toggle.Text = state and "ON" or "OFF"
+            end)
+        elseif setting.Type == "Color" then
+            local colorBtn = Instance.new("TextButton")
+            colorBtn.Size = UDim2.new(0, 60, 0, 24)
+            colorBtn.Position = UDim2.new(1, -64, 0.5, -12)
+            colorBtn.BackgroundColor3 = setting.Default
+            colorBtn.Text = ""
+            colorBtn.Parent = frame
+            local ccorner = Instance.new("UICorner")
+            ccorner.CornerRadius = UDim.new(0, 6)
+            ccorner.Parent = colorBtn
+        elseif setting.Type == "Slider" then
+            local slider = Instance.new("Frame")
+            slider.Size = UDim2.new(0, 100, 0, 6)
+            slider.Position = UDim2.new(1, -104, 0.5, -3)
+            slider.BackgroundColor3 = Color3.fromRGB(80, 70, 50)
+            slider.Parent = frame
+            local sc = Instance.new("UICorner")
+            sc.CornerRadius = UDim.new(1, 0)
+            sc.Parent = slider
+
+            local fill = Instance.new("Frame")
+            fill.Size = UDim2.new(setting.Default / setting.Max, 0, 1, 0)
+            fill.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+            fill.BorderSizePixel = 0
+            fill.Parent = slider
+            local fc = Instance.new("UICorner")
+            fc.CornerRadius = UDim.new(1, 0)
+            fc.Parent = fill
+        end
+    end
+end
+
+local currentTab = "Items"
+local tabBuilders = {
+    Items = BuildItemsTab,
+    NPCs = BuildNPCsTab,
+    Player = BuildPlayerTab,
+    Settings = BuildSettingsTab,
+}
+
+for name, btn in pairs(TabButtons) do
+    btn.MouseButton1Click:Connect(function()
+        if currentTab == name then return end
+        currentTab = name
+        for _, b in pairs(TabButtons) do
+            b.BackgroundColor3 = Color3.fromRGB(35, 30, 15)
+            b.TextColor3 = Color3.fromRGB(200, 180, 120)
+        end
+        btn.BackgroundColor3 = Color3.fromRGB(60, 50, 20)
+        btn.TextColor3 = Color3.fromRGB(255, 215, 0)
+        if tabBuilders[name] then
+            tabBuilders[name]()
+        end
+        SetStatus("Loaded " .. name .. " Tab", Color3.fromRGB(200, 200, 255))
+    end)
+end
 
 local dragging = false
 local dragStart, startPos
@@ -229,7 +668,7 @@ TitleBar.InputBegan:Connect(function(input)
         dragging = true
         dragStart = input.Position
         startPos = MainFrame.Position
-        
+
         local connection
         connection = input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
@@ -247,72 +686,121 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
+local ResizeHandle = Instance.new("Frame")
+ResizeHandle.Size = UDim2.new(0, 16, 0, 16)
+ResizeHandle.Position = UDim2.new(1, -16, 1, -16)
+ResizeHandle.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+ResizeHandle.BackgroundTransparency = 0.3
+ResizeHandle.BorderSizePixel = 0
+ResizeHandle.Parent = MainFrame
+local ResizeCorner = Instance.new("UICorner")
+ResizeCorner.CornerRadius = UDim.new(0, 4)
+ResizeCorner.Parent = ResizeHandle
+
+local resizing = false
+local resizeStart, startSize
+
+ResizeHandle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        resizing = true
+        resizeStart = input.Position
+        startSize = MainFrame.Size
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                resizing = false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - resizeStart
+        local newX = math.max(280, startSize.X.Offset + delta.X)
+        local newY = math.max(200, startSize.Y.Offset + delta.Y)
+        MainFrame.Size = UDim2.new(0, newX, 0, newY)
+    end
+end)
+
+local isMinimized = false
+
+MinimizeBtn.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    if isMinimized then
+        MinimizeBtn.Text = "+"
+        Sidebar.Visible = false
+        ContentArea.Visible = false
+        StatusBar.Visible = false
+        ResizeHandle.Visible = false
+        TweenService:Create(MainFrame, TweenInfoOut, {Size = UDim2.new(0, 340, 0, 36)}):Play()
+    else
+        MinimizeBtn.Text = "─"
+        Sidebar.Visible = true
+        ContentArea.Visible = true
+        StatusBar.Visible = true
+        ResizeHandle.Visible = true
+        TweenService:Create(MainFrame, TweenInfoOut, {Size = UDim2.new(0, 340, 0, 420)}):Play()
+    end
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
 local function HighlightNPC(model)
-    if not model:IsA("Model") or model:FindFirstChildOfClass("Humanoid") == nil then return end
+    if not model:IsA("Model") or not model:FindFirstChildOfClass("Humanoid") then return end
     if Players:GetPlayerFromCharacter(model) then return end
-    if model:FindFirstChild("NPCHighlight") then return end
+    if model:FindFirstChild("ScriptHighlight") then return end
 
     local npcName = string.lower(model.Name)
-    
-    local isUnclePete = string.find(npcName, "pete") 
-        or string.find(npcName, "uncle") 
-        or string.find(npcName, "crazy")
+    local isUncle = string.find(npcName, "pete") or string.find(npcName, "uncle")
 
-    local highlight = Instance.new("Highlight")
-    highlight.Name = "NPCHighlight"
-    highlight.Adornee = model
-    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    highlight.Parent = model
-
-    if isUnclePete then
-        highlight.FillColor = Color3.fromRGB(255, 215, 0)
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-        highlight.FillTransparency = 0.1
-        highlight.OutlineTransparency = 0
-
-        local head = model:FindFirstChild("Head") or model.PrimaryPart
-        if head and not head:FindFirstChild("UncleTag") then
-            local billboard = Instance.new("BillboardGui")
-            billboard.Name = "UncleTag"
-            billboard.Size = UDim2.new(0, 200, 0, 30)
-            billboard.StudsOffset = Vector3.new(0, 3.5, 0)
-            billboard.AlwaysOnTop = true
-            billboard.Parent = head
-
-            local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1, 0, 1, 0)
-            label.BackgroundTransparency = 1
-            label.Text = "★ UNCLE PETE ★"
-            label.TextColor3 = Color3.fromRGB(255, 215, 0)
-            label.TextStrokeTransparency = 0
-            label.TextSize = 14
-            label.Font = Enum.Font.GothamBlack
-            label.Parent = billboard
-        end
+    if isUncle then
+        CreateHighlight(model, Color3.fromRGB(255, 215, 0), Color3.fromRGB(255, 255, 255), 0.1, 0)
+        CreateBillboardTag(model, "★ UNCLE PETE ★", Color3.fromRGB(255, 215, 0), Vector3.new(0, 3.5, 0), UDim2.new(0, 200, 0, 30))
     else
-        highlight.FillColor = Color3.fromRGB(255, 170, 0)
-        highlight.OutlineColor = Color3.fromRGB(150, 100, 0)
-        highlight.FillTransparency = 0.4
-        highlight.OutlineTransparency = 0.1
+        CreateHighlight(model, Color3.fromRGB(255, 170, 0), Color3.fromRGB(150, 100, 0), 0.4, 0.1)
     end
 end
 
 local function ScanNPCs()
-    for _, object in pairs(Workspace:GetDescendants()) do
-        if object:IsA("Model") and object:FindFirstChildOfClass("Humanoid") then
-            HighlightNPC(object)
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj:FindFirstChildOfClass("Humanoid") then
+            HighlightNPC(obj)
         end
     end
 end
 
-Workspace.DescendantAdded:Connect(function(descendant)
-    if descendant:IsA("Model") then
-        task.wait(0.3)
-        if descendant:FindFirstChildOfClass("Humanoid") then
-            HighlightNPC(descendant)
-        end
+Workspace.DescendantAdded:Connect(function(desc)
+    task.wait(0.2)
+    if desc:IsA("Model") and desc:FindFirstChildOfClass("Humanoid") then
+        HighlightNPC(desc)
     end
 end)
 
 ScanNPCs()
 
+local autoHealEnabled = true
+local autoHealThreshold = 30
+
+RunService.Heartbeat:Connect(function()
+    if not autoHealEnabled then return end
+    local stats = GetPlayerStats()
+    if stats.Health < autoHealThreshold then
+        local remotes = FindRemoteEvent("cure")
+        if #remotes > 0 then
+            FireRemote(remotes[1])
+            SetStatus("Auto-heal triggered!", Color3.fromRGB(255, 100, 100))
+        end
+    end
+end)
+
+BuildItemsTab()
+SetStatus("System Ready | Press 'X' to close", Color3.fromRGB(100, 255, 100))
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.Delete then
+        ScreenGui:Destroy()
+    end
+end)
