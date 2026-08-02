@@ -296,8 +296,6 @@ local function BuildNPCsTab()
     ScanNPCs()
 end
 
-local autoHealEnabled = false
-
 local function BuildPlayerTab()
     ClearContent()
     
@@ -323,44 +321,103 @@ local function BuildPlayerTab()
     end
 end
 
+local ColorPresets = {
+    {Name = "Gold (Default)", Stroke = Color3.fromRGB(255, 215, 0), Title = Color3.fromRGB(255, 235, 150), Bg = Color3.fromRGB(18, 16, 10)},
+    {Name = "Cyber Blue", Stroke = Color3.fromRGB(0, 200, 255), Title = Color3.fromRGB(150, 230, 255), Bg = Color3.fromRGB(10, 16, 22)},
+    {Name = "Neon Purple", Stroke = Color3.fromRGB(180, 50, 255), Title = Color3.fromRGB(220, 150, 255), Bg = Color3.fromRGB(18, 10, 22)},
+    {Name = "Emerald Green", Stroke = Color3.fromRGB(50, 255, 120), Title = Color3.fromRGB(150, 255, 180), Bg = Color3.fromRGB(10, 20, 14)},
+    {Name = "Crimson Red", Stroke = Color3.fromRGB(255, 60, 60), Title = Color3.fromRGB(255, 150, 150), Bg = Color3.fromRGB(22, 10, 10)}
+}
+
+local ShapePresets = {
+    {Name = "Sharp Corners", Radius = 0},
+    {Name = "Medium Rounded", Radius = 8},
+    {Name = "Smooth Curved", Radius = 16}
+}
+
+local function ApplyTheme(preset)
+    MainStroke.Color = preset.Stroke
+    TitleLabel.TextColor3 = preset.Title
+    MainFrame.BackgroundColor3 = preset.Bg
+    ContentScroll.ScrollBarImageColor3 = preset.Stroke
+    SetStatus("Theme: " .. preset.Name, preset.Stroke)
+end
+
+local function ApplyShape(preset)
+    MainCorner.CornerRadius = UDim.new(0, preset.Radius)
+    TitleCorner.CornerRadius = UDim.new(0, preset.Radius)
+    SetStatus("Shape: " .. preset.Name, Color3.fromRGB(255, 215, 0))
+end
+
 local function BuildSettingsTab()
     ClearContent()
-    
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -6, 0, 26)
-    frame.BackgroundTransparency = 1
-    frame.Parent = ContentScroll
 
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.7, -8, 1, 0)
-    label.BackgroundTransparency = 1
-    label.Text = "🍪 Fast Auto Eat Cookie"
-    label.TextColor3 = Color3.fromRGB(220, 210, 170)
-    label.TextSize = 11
-    label.Font = Enum.Font.GothamMedium
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = frame
+    local themeTitle = Instance.new("TextLabel")
+    themeTitle.Size = UDim2.new(1, -6, 0, 20)
+    themeTitle.BackgroundTransparency = 1
+    themeTitle.Text = "🎨 UI COLOR THEME"
+    themeTitle.TextColor3 = Color3.fromRGB(255, 215, 0)
+    themeTitle.TextSize = 10
+    themeTitle.Font = Enum.Font.GothamBold
+    themeTitle.TextXAlignment = Enum.TextXAlignment.Left
+    themeTitle.Parent = ContentScroll
 
-    local toggle = Instance.new("TextButton")
-    toggle.Size = UDim2.new(0, 52, 0, 20)
-    toggle.Position = UDim2.new(1, -54, 0.5, -10)
-    toggle.BackgroundColor3 = autoHealEnabled and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(80, 70, 50)
-    toggle.Text = autoHealEnabled and "ON" or "OFF"
-    toggle.TextColor3 = Color3.fromRGB(20, 18, 10)
-    toggle.TextSize = 10
-    toggle.Font = Enum.Font.GothamBold
-    toggle.Parent = frame
+    for _, preset in ipairs(ColorPresets) do
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, -6, 0, 24)
+        btn.BackgroundColor3 = Color3.fromRGB(32, 28, 16)
+        btn.BackgroundTransparency = 0.3
+        btn.Text = "  " .. preset.Name
+        btn.TextColor3 = preset.Title
+        btn.TextSize = 11
+        btn.Font = Enum.Font.GothamMedium
+        btn.TextXAlignment = Enum.TextXAlignment.Left
+        btn.Parent = ContentScroll
 
-    local tcorner = Instance.new("UICorner")
-    tcorner.CornerRadius = UDim.new(0, 5)
-    tcorner.Parent = toggle
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 4)
+        corner.Parent = btn
 
-    toggle.MouseButton1Click:Connect(function()
-        autoHealEnabled = not autoHealEnabled
-        toggle.BackgroundColor3 = autoHealEnabled and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(80, 70, 50)
-        toggle.Text = autoHealEnabled and "ON" or "OFF"
-        SetStatus(autoHealEnabled and "Auto Cookie ON" or "Auto Cookie OFF", autoHealEnabled and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100))
-    end)
+        btn.MouseButton1Click:Connect(function()
+            ApplyTheme(preset)
+        end)
+    end
+
+    local spacer = Instance.new("Frame")
+    spacer.Size = UDim2.new(1, -6, 0, 8)
+    spacer.BackgroundTransparency = 1
+    spacer.Parent = ContentScroll
+
+    local shapeTitle = Instance.new("TextLabel")
+    shapeTitle.Size = UDim2.new(1, -6, 0, 20)
+    shapeTitle.BackgroundTransparency = 1
+    shapeTitle.Text = "📐 CORNER SHAPE STYLE"
+    shapeTitle.TextColor3 = Color3.fromRGB(255, 215, 0)
+    shapeTitle.TextSize = 10
+    shapeTitle.Font = Enum.Font.GothamBold
+    shapeTitle.TextXAlignment = Enum.TextXAlignment.Left
+    shapeTitle.Parent = ContentScroll
+
+    for _, preset in ipairs(ShapePresets) do
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, -6, 0, 24)
+        btn.BackgroundColor3 = Color3.fromRGB(32, 28, 16)
+        btn.BackgroundTransparency = 0.3
+        btn.Text = "  " .. preset.Name
+        btn.TextColor3 = Color3.fromRGB(220, 210, 170)
+        btn.TextSize = 11
+        btn.Font = Enum.Font.GothamMedium
+        btn.TextXAlignment = Enum.TextXAlignment.Left
+        btn.Parent = ContentScroll
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 4)
+        corner.Parent = btn
+
+        btn.MouseButton1Click:Connect(function()
+            ApplyShape(preset)
+        end)
+    end
 end
 
 local currentTab = "Items"
@@ -416,27 +473,7 @@ MinimizeBtn.MouseButton1Click:Connect(function()
 end)
 
 CloseBtn.MouseButton1Click:Connect(function()
-    autoHealEnabled = false
     ScreenGui:Destroy()
-end)
-
-task.spawn(function()
-    while true do
-        if autoHealEnabled then
-            GiveItem("Cookie")
-            local char = LocalPlayer.Character
-            if char then
-                local cookie = LocalPlayer.Backpack:FindFirstChild("Cookie") or char:FindFirstChild("Cookie")
-                if cookie then
-                    cookie.Parent = char
-                    cookie:Activate()
-                end
-            end
-            task.wait(0.05)
-        else
-            task.wait(0.2)
-        end
-    end
 end)
 
 BuildItemsTab()
@@ -444,8 +481,6 @@ SetStatus("System Ready", Color3.fromRGB(100, 255, 100))
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not gameProcessed and input.KeyCode == Enum.KeyCode.Delete then
-        autoHealEnabled = false
         ScreenGui:Destroy()
     end
 end)
-
